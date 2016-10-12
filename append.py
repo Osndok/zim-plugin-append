@@ -20,6 +20,16 @@
 
 defaultNotebook='Primary'
 
+# ----------------------
+
+# If you tend to make log entries past midnight, this is the number of hours past midnight that
+# will be considered "the same day" (for purposes of selecting the journal page). To be most
+# effective, it should be the time that you are "most surely asleep". Small for early risers, larger
+# for night-owls. For example, a value of '4' would imply that the new day/page starts at '4am'.
+hours_past_midnight=4
+
+# ----------------------
+
 import gtk
 
 import re
@@ -28,6 +38,7 @@ import os.path
 
 import pprint
 
+from datetime import datetime, timedelta
 from datetime import date as dateclass
 from dateutil.parser import parse
 from time import strftime
@@ -150,7 +161,9 @@ class AppendPluginCommand(Command):
 
 			print 'NotebookInfo=', notebookInfo
 
-			todaysJournal = strftime(':Journal:%Y:%m:%d')
+			# The notion of 'today' might extend into the wee hours of the morning.
+			offset_time=datetime.today()-timedelta(hours=hours_past_midnight)
+			todaysJournal = offset_time.strftime(':Journal:%Y:%m:%d')
 
 			if 'page' in self.opts:
 				pagename = self.opts['page']
