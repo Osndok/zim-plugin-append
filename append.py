@@ -230,11 +230,21 @@ class AppendPluginCommand(Command):
 						raise Exception, 'Page already exists: '+pagename
 
 					ui.append_text_to_page(pagename, text);
+				elif self.likelyHasChildPages(ui, notebookInfo, pagename):
+					print 'Page dne, but has children... yuck...'
+					# The new_page_from_text function would create enumerated side-pages...
+					# so we can't use the template when creating a new page... :-(
+					text = (
+						"====== " + pagename + " ======\n"
+						"https://github.com/Osndok/zim-plugin-append/issues/1\n\n"
+						+text
+					)
+					ui.append_text_to_page(pagename, text);
 				else:
 					print 'Page does not exist'
 
 					if 'exists' in self.opts:
-						raise Exception, 'Page dose not exist: '+pagename
+						raise Exception, 'Page does not exist: '+pagename
 
 					ui.new_page_from_text('\n'+text, name=pagename, use_template=True)
 
@@ -264,6 +274,18 @@ class AppendPluginCommand(Command):
 
 		return os.path.isfile(fullPath)
 
+	def likelyHasChildPages(self, ui, notebookInfo, pagename):
+		#dnw: path=ui.notebook.resolve_path(pagename);
+		directory=notebookInfo.uri.replace('file://', '')
+		print 'Directory=', directory
+
+		relative=Path(pagename).name.replace(':','/')
+		print 'Relative=', relative
+
+		fullPath='{0}/{1}'.format(directory, relative)
+		print 'Path=', fullPath
+
+		return os.path.isdir(fullPath)
 
 class AppendPlugin(PluginClass):
 
