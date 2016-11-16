@@ -246,7 +246,7 @@ class AppendPluginCommand(Command):
 					if 'exists' in self.opts:
 						raise Exception, 'Page does not exist: '+pagename
 
-					ui.new_page_from_text('\n'+text, name=pagename, use_template=True)
+					ui.new_page_from_text(text, name=pagename, use_template=True)
 
 				didSomething=True
 
