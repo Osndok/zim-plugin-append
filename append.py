@@ -44,16 +44,19 @@ from dateutil.parser import parse
 from time import strftime
 
 from zim.plugins import PluginClass, WindowExtension, extends
-from zim.command import Command
+
+try:
+	from zim.command import Command
+	from zim.ipc import start_server_if_not_running, ServerProxy
+	zim66=False;
+except ImportError:
+	from zim.main import GtkCommand as Command
+	zim66=True;
+
 from zim.actions import action
 from zim.config import data_file, ConfigManager
-from zim.notebook import Notebook, PageNameError, Path, NotebookInfo, \
-	resolve_notebook, build_notebook
-from zim.ipc import start_server_if_not_running, ServerProxy
-from zim.gui.widgets import Dialog, ScrolledTextView, IconButton, \
-	InputForm, gtk_window_set_default_icon, QuestionDialog
+from zim.notebook import Notebook, Path, resolve_notebook
 from zim.gui.clipboard import Clipboard, SelectionClipboard
-from zim.gui.notebookdialog import NotebookComboBox
 from zim.templates import get_template
 
 import logging
@@ -223,14 +226,14 @@ class AppendPluginCommand(Command):
 
 			if text:
 				# BUG: the journal template is not used for new pages...
-				if self.pageExists(ui, notebookInfo, pagename):
+				if self.pageExists(notebookInfo, pagename):
 					print 'Page exists...'
 
 					if 'create' in self.opts:
 						raise Exception, 'Page already exists: '+pagename
 
 					ui.append_text_to_page(pagename, text);
-				elif self.likelyHasChildPages(ui, notebookInfo, pagename):
+				elif self.likelyHasChildPages(notebookInfo, pagename):
 					print 'Page dne, but has children... yuck...'
 					# The new_page_from_text function would create enumerated side-pages...
 					# so we can't use the template when creating a new page... :-(
@@ -255,13 +258,21 @@ class AppendPluginCommand(Command):
 				didSomething=True
 
 			if 'attach' in self.opts:
-				ui.do_attach_file(path, self.opts['attach'])
+				if zim66:
+					attachments = notebook.get_attachments_dir(path)
+					file = dir.file(name)
+					if file.isdir():
+						print 'BUG: dont know how to handle folders in 0.66'
+					else:
+						file.copyto(attachments)
+				else:
+					ui.do_attach_file(path, self.opts['attach'])
 
 			if _raise or _show:
 				ui.present(pagename)
 				didSomething=True
 
-	def pageExists(self, ui, notebookInfo, pagename):
+	def pageExists(self, notebookInfo, pagename):
 		#dnw: path=ui.notebook.resolve_path(pagename);
 		directory=notebookInfo.uri.replace('file://', '')
 		print 'Directory=', directory
@@ -274,7 +285,7 @@ class AppendPluginCommand(Command):
 
 		return os.path.isfile(fullPath)
 
-	def likelyHasChildPages(self, ui, notebookInfo, pagename):
+	def likelyHasChildPages(self, notebookInfo, pagename):
 		#dnw: path=ui.notebook.resolve_path(pagename);
 		directory=notebookInfo.uri.replace('file://', '')
 		print 'Directory=', directory
