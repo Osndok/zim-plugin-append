@@ -50,8 +50,12 @@ try:
 	from zim.ipc import start_server_if_not_running, ServerProxy
 	zim66=False;
 except ImportError:
-	from zim.main import GtkCommand as Command
+	from zim.main.command import GtkCommand as Command
+	from zim.main import ZIM_APPLICATION
 	zim66=True;
+
+	print ZIM_APPLICATION._running
+	print ZIM_APPLICATION._windows
 
 from zim.actions import action
 from zim.config import data_file, ConfigManager
@@ -175,24 +179,33 @@ class AppendPluginCommand(Command):
 			elif 'date' in self.opts:
 				pagename = parse(self.opts['date']).strftime(':Journal:%Y:%m:%d');
 			else:
+				print self.opts
 				raise Exception, 'you must somehow identify a page to modify'
 
 			print 'Pagename=', pagename
 
-			start_server_if_not_running()
-			server = ServerProxy();
+			if (zim66):
+				server = ZIM_APPLICATION;
+				#print ZIM_APPLICATION._running
+				for window in ZIM_APPLICATION._windows:
+					if window.ui.notebook.uri == notebookInfo.uri:
+						notebook=window.ui.notebook;
+						ui=window.ui;
+						break;
+			else:
+				start_server_if_not_running()
+				server = ServerProxy();
+				pprint.pprint(server.list_objects())
+				ui=server.get_notebook(notebookInfo, _raise or _show)
+				notebook=ui.notebook
 
 			print 'Server=', server
-			pprint.pprint(server.list_objects())
-
-			# Misnomer? get_notebook returns a proxy to the main ui/gui class that is responsible for the given notebook.
-			# That is to say, there is only one notebook per window.
-			ui=server.get_notebook(notebookInfo, _raise or _show)
 			print 'UI=', ui
-			print 'Notebook?=', ui.notebook
 
-			#dnw: page=ui.notebook.get_page(path);
-			#print 'Page=', page
+			if ui is None:
+				raise Exception, 'dont know how to append text without the notebook actually open'
+
+			print 'Notebook?=', notebook
 
 			quoting=('quote' in self.opts)
 
