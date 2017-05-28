@@ -54,9 +54,6 @@ except ImportError:
 	from zim.main import ZIM_APPLICATION
 	zim66=True;
 
-	print ZIM_APPLICATION._running
-	print ZIM_APPLICATION._windows
-
 from zim.actions import action
 from zim.config import data_file, ConfigManager
 from zim.notebook import Notebook, Path, resolve_notebook
@@ -184,6 +181,9 @@ class AppendPluginCommand(Command):
 
 			print 'Pagename=', pagename
 
+			ui=None;
+			notebook=None;
+
 			if (zim66):
 				server = ZIM_APPLICATION;
 				#print ZIM_APPLICATION._running
@@ -201,10 +201,6 @@ class AppendPluginCommand(Command):
 
 			print 'Server=', server
 			print 'UI=', ui
-
-			if ui is None:
-				raise Exception, 'dont know how to append text without the notebook actually open'
-
 			print 'Notebook?=', notebook
 
 			quoting=('quote' in self.opts)
@@ -245,7 +241,12 @@ class AppendPluginCommand(Command):
 					if 'create' in self.opts:
 						raise Exception, 'Page already exists: '+pagename
 
-					ui.append_text_to_page(pagename, text);
+					if ui is None:
+						self._direct_append(notebookInfo, pagename, text);
+					else:
+						ui.append_text_to_page(pagename, text);
+				elif ui is None:
+					self._direct_create(notebookInfo, pagename, text);
 				elif self.likelyHasChildPages(notebookInfo, pagename):
 					print 'Page dne, but has children... yuck...'
 					# The new_page_from_text function would create enumerated side-pages...
@@ -266,6 +267,8 @@ class AppendPluginCommand(Command):
 
 				didSomething=True
 
+			#BUG: these features don't work without 'ui'...
+
 			if 'directory' in self.opts:
 				ui.import_attachments(path, self.opts['directory'])
 				didSomething=True
@@ -285,31 +288,35 @@ class AppendPluginCommand(Command):
 				ui.present(pagename)
 				didSomething=True
 
-	def pageExists(self, notebookInfo, pagename):
-		#dnw: path=ui.notebook.resolve_path(pagename);
+	def pageDirectoryPath(self, notebookInfo, pagename):
 		directory=notebookInfo.uri.replace('file://', '')
-		print 'Directory=', directory
-
-		relative=Path(pagename).name.replace(':','/')+".txt"
-		print 'Relative=', relative
-
-		fullPath='{0}/{1}'.format(directory, relative)
-		print 'Path=', fullPath
-
-		return os.path.isfile(fullPath)
-
-	def likelyHasChildPages(self, notebookInfo, pagename):
-		#dnw: path=ui.notebook.resolve_path(pagename);
-		directory=notebookInfo.uri.replace('file://', '')
-		print 'Directory=', directory
+		#print 'Directory=', directory
 
 		relative=Path(pagename).name.replace(':','/')
-		print 'Relative=', relative
+		#print 'Relative=', relative
 
 		fullPath='{0}/{1}'.format(directory, relative)
-		print 'Path=', fullPath
+		#print 'Path=', fullPath
+		return fullPath;
 
-		return os.path.isdir(fullPath)
+	def pageTxtFilePath(self, notebookInfo, pagename):
+		return self.pageDirectoryPath(notebookInfo, pagename)+".txt";
+
+	def pageExists(self, notebookInfo, pagename):
+		return os.path.isfile(self.pageTxtFilePath(notebookInfo, pagename));
+
+	def likelyHasChildPages(self, notebookInfo, pagename):
+		return os.path.isdir(self.pageDirectoryPath(notebookInfo, pagename));
+
+	def _direct_append(self, notebookInfo, pagename, text):
+		with open(self.pageTxtFilePath(notebookInfo, pagename), "a") as txtFile:
+			txtFile.write(text);
+
+	def _direct_create(self, notebookInfo, pagename, text):
+		with open(self.pageTxtFilePath(notebookInfo, pagename), "a") as txtFile:
+			txtFile.write("====== " + pagename + " ======\n");
+			txtFile.write("https://github.com/Osndok/zim-plugin-append/issues/5\n\n");
+			txtFile.write(text);
 
 class AppendPlugin(PluginClass):
 
