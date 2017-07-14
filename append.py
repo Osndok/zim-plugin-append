@@ -192,6 +192,8 @@ class AppendPluginCommand(Command):
 						notebook=window.ui.notebook;
 						ui=window.ui;
 						break;
+					else:
+						logger.debug("not it: '%s' != '%s'", window.ui.notebook.uri, notebookInfo.uri);
 			else:
 				start_server_if_not_running()
 				server = ServerProxy();
@@ -310,6 +312,10 @@ class AppendPluginCommand(Command):
 
 	def _direct_append(self, notebookInfo, pagename, text):
 		with open(self.pageTxtFilePath(notebookInfo, pagename), "a") as txtFile:
+			# Apparently, online & offline string append logic must be different.
+			# I find that without this, the last line is appended to (as opposed to creating a new line)
+			# If there are "too many newlines", then we need to trim the trailing newline from the 'text'.
+			txtFile.write("\n");
 			txtFile.write(text);
 
 	def _direct_create(self, notebookInfo, pagename, text):
