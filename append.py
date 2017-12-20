@@ -208,9 +208,13 @@ class AppendPluginCommand(Command):
 			quoting=('quote' in self.opts)
 
 			text=''
+			emptyString=False
 
 			if 'literal' in self.opts:
-				text += self.opts['literal']
+				if type(self.opts['literal']) == bool:
+					emptyString=True
+				else:
+					text += self.opts['literal']
 
 			if 'time' in self.opts:
 				if pagename==todaysJournal:
@@ -235,7 +239,7 @@ class AppendPluginCommand(Command):
 
 			didSomething=False
 
-			if text:
+			if text or emptyString:
 				# BUG: the journal template is not used for new pages...
 				if self.pageExists(notebookInfo, pagename):
 					print 'Page exists...'
