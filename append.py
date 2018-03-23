@@ -41,6 +41,8 @@ import pprint
 from datetime import datetime, timedelta
 from datetime import date as dateclass
 from dateutil.parser import parse
+
+import time
 from time import strftime
 
 from zim.plugins import PluginClass, WindowExtension, extends
@@ -217,6 +219,9 @@ class AppendPluginCommand(Command):
 					text += self.opts['literal']
 
 			if 'time' in self.opts:
+				print "time(): ", time.time()
+				print "timezone: ", time.tzname
+				print "localtime: ", time.localtime()
 				if pagename==todaysJournal:
 					# It's log-like... all the same day... so don't include the full date...
 					text = strftime('%I:%M%P - ') + text
