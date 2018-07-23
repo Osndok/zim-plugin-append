@@ -93,6 +93,7 @@ commandLineOptions = (
 	('quote'     , 'q', 'Wrap the appended text in a big block-quote (or similar)'),
 	('raise'     , 'r', 'Request that Zim be brought forward to the users attention (implies "show")'),
 	('show'      , 's', 'Navigate Zim to the specified page (but the window may still be buried)'),
+	('stdin'     , 'i', 'Read the text to append from stdin'),
 	('time'      , 't', 'Include the current time (if today\'s journal page), or the full date and time (otherwise) before the entry'),
 	('usage'     , '?', 'Print this help text and exit.'),
 )
@@ -123,35 +124,6 @@ class AppendPluginCommand(Command):
 			self.opts[arg] = [] # allow list
 
 		Command.parse_options(self, *args)
-
-	def get_text(self):
-		if 'input' in self.opts:
-			if self.opts['input'] == 'stdin':
-				import sys
-				text = sys.stdin.read()
-			elif self.opts['input'] == 'clipboard':
-				text = \
-					SelectionClipboard.get_text() \
-					or Clipboard.get_text()
-			else:
-				raise AssertionError, 'Unknown input type: %s' % self.opts['input']
-		else:
-			text = self.opts.get('text')
-
-		if text and 'encoding' in self.opts:
-			if self.opts['encoding'] == 'base64':
-				import base64
-				text = base64.b64decode(text)
-			elif self.opts['encoding'] == 'url':
-				from zim.parsing import url_decode, URL_ENCODE_DATA
-				text = url_decode(text, mode=URL_ENCODE_DATA)
-			else:
-				raise AssertionError, 'Unknown encoding: %s' % self.opts['encoding']
-
-		if text and not isinstance(text, unicode):
-			text = text.decode('utf-8')
-
-		return text
 
 	def run(self):
 		if not self.opts or self.opts.get('help'):
@@ -236,8 +208,13 @@ class AppendPluginCommand(Command):
 			if 'clipboard' in self.opts:
 				text += SelectionClipboard.get_text() or Clipboard.get_text()
 
-			#if not 'oldline' in self.opts:
-			#	text = '\n{0}\n'.format(text)
+			# BUG: This does not work, because this code executes in the main zim process...
+			# we need a pre-handoff hook to convert it to a '--literal', or similar.
+			if 'stdin' in self.opts:
+				import sys
+				text += sys.stdin.read()
+
+			# --------------------------------------------------------------------------------
 
 			if text and quoting:
 				text="'''\n{0}\n'''".format(text)
