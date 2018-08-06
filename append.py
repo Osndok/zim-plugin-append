@@ -223,6 +223,7 @@ class AppendPluginCommand(Command):
 
 			if text or emptyString:
 				# BUG: the journal template is not used for new pages...
+				# BUG: If the page does not exist, then we assume that it cannot be 'open'... while generally true, this is probably technically incorrect for stub pages just-navigated-to (but not yet saved).
 				if self.pageExists(notebookInfo, pagename):
 					print 'Page exists...'
 
@@ -235,16 +236,22 @@ class AppendPluginCommand(Command):
 						ui.append_text_to_page(pagename, text);
 				elif ui is None:
 					self._direct_create(notebookInfo, pagename, text);
-				elif self.likelyHasChildPages(notebookInfo, pagename):
+				elif self.likelyHasChildPages(ui, notebookInfo, pagename):
 					print 'Page dne, but has children... yuck...'
 					# The new_page_from_text function would create enumerated side-pages...
 					# so we can't use the template when creating a new page... :-(
-					text = (
-						"====== " + pagename + " ======\n"
-						"https://github.com/Osndok/zim-plugin-append/issues/1\n\n"
-						+text
-					)
-					ui.append_text_to_page(pagename, text);
+					#text = (
+					#	"====== " + pagename + " ======\n"
+					#	"https://github.com/Osndok/zim-plugin-append/issues/1\n\n"
+					#	+text
+					#)
+					#ui.append_text_to_page(pagename, text);
+					path = ui.notebook.pages.lookup_from_user_input(pagename)
+					page = ui.notebook.get_page(path) # as opposed to 'get_new_page' (!!!!)
+					parsetree = ui.notebook.get_template(page)
+					page.set_parsetree(parsetree)
+					page.parse('wiki', text, append=True) # FIXME format hard coded
+					ui.notebook.store_page(page)
 				else:
 					print 'Page does not exist'
 
@@ -293,8 +300,11 @@ class AppendPluginCommand(Command):
 	def pageExists(self, notebookInfo, pagename):
 		return os.path.isfile(self.pageTxtFilePath(notebookInfo, pagename));
 
-	def likelyHasChildPages(self, notebookInfo, pagename):
-		return os.path.isdir(self.pageDirectoryPath(notebookInfo, pagename));
+	def likelyHasChildPages(self, ui, notebookInfo, pagename):
+		path = ui.notebook.pages.lookup_from_user_input(pagename)
+		page = ui.notebook.get_page(path)
+		return page.hascontent or page.haschildren
+		#return os.path.isdir(self.pageDirectoryPath(notebookInfo, pagename));
 
 	def _direct_append(self, notebookInfo, pagename, text):
 		with open(self.pageTxtFilePath(notebookInfo, pagename), "a") as txtFile:
