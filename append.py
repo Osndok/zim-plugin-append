@@ -201,8 +201,8 @@ class AppendPluginCommand(Command):
 					text = strftime('%Y-%m-%d @ %I:%M%P - ') + text
 
 			if 'file' in self.opts:
-				if not quoting:
-					text += '\n{0}:\n'.format(self.opts['file'])
+				#if not quoting:
+				#	text += '\n{0}:\n'.format(self.opts['file'])
 				text += open(self.opts['file']).read()
 
 			if 'clipboard' in self.opts:
