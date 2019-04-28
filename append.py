@@ -280,8 +280,11 @@ class AppendPluginCommand(Command):
 					ui.do_attach_file(path, self.opts['attach'])
 
 			if _raise or _show:
-				ui.present(pagename)
-				didSomething=True
+				if ui:
+					ui.present(pagename)
+					didSomething=True
+				else:
+					print 'ERROR: unable to raise/show window, no UI running'
 
 	def pageDirectoryPath(self, notebookInfo, pagename):
 		directory=notebookInfo.uri.replace('file://', '')
