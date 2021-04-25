@@ -2,7 +2,7 @@
 #
 # append.py - A plugin to allow any unix-like application to create entries in the Zim wiki.
 #
-# Copyright 2016 - Robert Hailey <zim@osndok.com>
+# Copyright 2021 - Robert Hailey <zim@osndok.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import gtk
 
 import re
 
+import os
 import os.path
 
 import pprint
@@ -318,9 +319,13 @@ class AppendPluginCommand(Command):
 			txtFile.write(text);
 
 	def _direct_create(self, notebookInfo, pagename, text):
-		with open(self.pageTxtFilePath(notebookInfo, pagename), "a") as txtFile:
-			txtFile.write("====== " + pagename + " ======\n");
-			txtFile.write("https://github.com/Osndok/zim-plugin-append/issues/5\n\n");
+		txtFilePath = self.pageTxtFilePath(notebookInfo, pagename)
+		dirname = os.path.dirname(txtFilePath)
+		mode = 0o770
+		os.makedirs(dirname, mode)
+		with open(txtFilePath, "a") as txtFile:
+			txtFile.write("====== " + pagename + " ======\n\n");
+			#txtFile.write("https://github.com/Osndok/zim-plugin-append/issues/5\n\n");
 			txtFile.write(text);
 
 class AppendPlugin(PluginClass):
