@@ -322,7 +322,8 @@ class AppendPluginCommand(Command):
 		txtFilePath = self.pageTxtFilePath(notebookInfo, pagename)
 		dirname = os.path.dirname(txtFilePath)
 		mode = 0o770
-		os.makedirs(dirname, mode)
+		if not os.path.isdir(dirname):
+			os.makedirs(dirname, mode)
 		with open(txtFilePath, "a") as txtFile:
 			txtFile.write("====== " + pagename + " ======\n\n");
 			#txtFile.write("https://github.com/Osndok/zim-plugin-append/issues/5\n\n");
