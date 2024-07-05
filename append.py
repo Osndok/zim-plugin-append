@@ -67,6 +67,11 @@ import logging
 
 logger = logging.getLogger('zim.plugins.append')
 
+# Loosely matches HTTP header format
+def looks_like_wiki_header(header):
+    # A line that begins with a series of non-spaces, a colon, and then a space.
+    pattern = r'^\S+:\s'
+    return re.match(pattern, header) is not None
 
 usagehelp = '''\
 usage: zim --plugin append [OPTIONS]
@@ -219,6 +224,13 @@ class AppendPluginCommand(Command):
 
 			if text and quoting:
 				text="'''\n{0}\n'''".format(text)
+
+			# since append_text_to_page has 'wiki' as the hard coded format, we must make sure that we don't
+			# send it something that looks like a wiki header, or it will just eat it.
+			# TODO: check if modern Zim still has this issue, and see if we can detect the version here
+			if looks_like_wiki_header(text):
+				# must be a prefix
+				text="\n" + text
 
 			didSomething=False
 
